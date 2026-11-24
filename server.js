@@ -5,7 +5,11 @@ const fs = require("fs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, "certificates.json");
+
+// Handle Vercel serverless environment (/tmp is writable, root is read-only)
+const isVercel = Boolean(process.env.VERCEL);
+const DATA_FILE = isVercel ? path.join("/tmp", "certificates.json") : path.join(__dirname, "certificates.json");
+const BUNDLED_FILE = path.join(__dirname, "certificates.json");
 
 // Default certificate template if file doesn't exist
 const DEFAULT_CERTIFICATES = {
@@ -26,9 +30,14 @@ function loadCertificates() {
     if (fs.existsSync(DATA_FILE)) {
       const content = fs.readFileSync(DATA_FILE, "utf-8");
       return JSON.parse(content);
+    } else if (isVercel && fs.existsSync(BUNDLED_FILE)) {
+      const content = fs.readFileSync(BUNDLED_FILE, "utf-8");
+      const parsed = JSON.parse(content);
+      saveCertificates(parsed);
+      return parsed;
     }
   } catch (err) {
-    console.error("Error reading certificates.json, falling back to defaults:", err);
+    console.error("Error reading certificates, falling back to defaults:", err);
   }
   saveCertificates(DEFAULT_CERTIFICATES);
   return { ...DEFAULT_CERTIFICATES };
@@ -38,7 +47,7 @@ function saveCertificates(data) {
   try {
     fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), "utf-8");
   } catch (err) {
-    console.error("Error writing to certificates.json:", err);
+    console.warn("Notice: could not write to disk:", err.message);
   }
 }
 
@@ -146,4 +155,8 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.listen(PORT, () => console.log(`Certificate site running at http://localhost:${PORT}`));
+if (require.main === module && !process.env.VERCEL) {
+  app.listen(PORT, () => console.log(`Certificate site running at http://localhost:${PORT}`));
+}
+
+module.exports = app;
