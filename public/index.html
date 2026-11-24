@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f7faf9" />
+  <title>Certificate Record Lookup</title>
+  <style>
+    :root { --green:#26966f; --ink:#202a35; --muted:#68727d; --line:#e8edf0; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:#f7faf9; color:var(--ink);
+      font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    .top { padding:24px 18px; text-align:center; border-bottom:1px solid var(--line); background:white; }
+    .brand { font-size:20px; font-weight:800; letter-spacing:.3px; color:#176e58; }
+    .subbrand { margin-top:4px; color:var(--muted); font-size:12px; }
+    main { width:min(720px, calc(100% - 28px)); margin:54px auto; }
+    .panel { background:white; border:1px solid var(--line); border-radius:18px; padding:34px;
+      box-shadow:0 10px 35px rgba(24,45,39,.06); }
+    .status-icon { width:76px; height:76px; margin:0 auto 16px; border-radius:50%;
+      display:grid; place-items:center; background:#e6f5ef; color:var(--green); font-size:42px; font-weight:700; }
+    h1 { margin:0; text-align:center; font-size:25px; }
+    .subtitle { text-align:center; color:var(--muted); margin:10px 0 28px; line-height:1.5; }
+    .section-title { text-align:center; font-size:17px; letter-spacing:.6px; margin:0 0 18px; }
+    .details { border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+    .item { display:grid; grid-template-columns: minmax(125px, 38%) 1fr; border-bottom:1px solid var(--line); }
+    .item:last-child { border-bottom:0; }
+    .key,.value { padding:15px 17px; line-height:1.45; }
+    .key { background:#f8fafb; font-weight:650; font-size:14px; }
+    .value { color:#505b65; overflow-wrap:anywhere; }
+    .disclaimer { margin:22px 0 0; padding:13px 15px; border-radius:10px; background:#fff8e8;
+      color:#725b27; font-size:12px; line-height:1.55; }
+    .error { text-align:center; padding:20px 5px; }
+    .error h1 { color:#a13b3b; }
+    .admin { margin-top:22px; text-align:center; }
+    button { border:0; border-radius:9px; padding:12px 18px; background:#246fcb; color:white;
+      font-weight:650; cursor:pointer; }
+    button:hover { filter:brightness(.95); }
+    #qrBox { display:none; margin-top:22px; padding-top:20px; border-top:1px solid var(--line); }
+    #qrImage { display:block; width:220px; max-width:100%; margin:14px auto; }
+    #qrUrl { color:#52616c; font-size:12px; overflow-wrap:anywhere; }
+    footer { text-align:center; color:#8a949d; font-size:12px; padding:0 16px 28px; }
+    @media(max-width:520px) {
+      main { margin:25px auto; }
+      .panel { padding:24px 17px; }
+      h1 { font-size:22px; }
+      .item { grid-template-columns:1fr; }
+      .key { padding-bottom:5px; }
+      .value { padding-top:5px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div style="max-width: 720px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; text-align: left; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <div class="brand">CERTIFICATE RECORD PORTAL</div>
+        <div class="subbrand">Independent certificate record lookup</div>
+      </div>
+      <a href="/admin" style="font-size: 13px; font-weight: 650; text-decoration: none; color: #176e58; background: #e6f5ef; padding: 8px 14px; border-radius: 8px; border: 1px solid #cce9de;">Admin Portal ⚙</a>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel" id="result">
+      <div style="text-align:center;color:#68727d">Loading certificate record…</div>
+    </section>
+    <section class="admin" id="qrTools" hidden>
+      <button id="makeQr">Generate QR code for this record</button>
+      <div id="qrBox">
+        <img id="qrImage" alt="QR code linking to this certificate record" />
+        <div id="qrUrl"></div>
+        <p><a id="downloadQr" download="certificate-qr.png">Download QR code</a></p>
+      </div>
+    </section>
+  </main>
+  <footer>Personal record page &bull; <a href="/admin" style="color: inherit; text-decoration: underline;">Admin &amp; QR Generator</a></footer>
+
+  <script>
+    const result = document.getElementById("result");
+    const id = decodeURIComponent(location.pathname.split("/").filter(Boolean).pop() || "")
+      .toUpperCase();
+
+    function row(label, value) {
+      return `<div class="item"><div class="key">${label}</div><div class="value">${value}</div></div>`;
+    }
+
+    async function loadRecord() {
+      if (!id || id === "VERIFY") {
+        result.innerHTML = `<div class="error"><h1>Certificate Record Lookup</h1>
+          <p>Scan a certificate QR code or open a link containing a certificate ID.</p>
+          <p>Example: <code>/verify/INFOSYS-ISB1-2025-AMIT</code></p></div>`;
+        return;
+      }
+      try {
+        const response = await fetch(`/api/certificates/${encodeURIComponent(id)}`);
+        const data = await response.json();
+        if (!response.ok || !data.found) throw new Error(data.message || "Record not found");
+        const c = data.certificate;
+        result.innerHTML = `
+          <div class="status-icon" aria-label="Record found">✓</div>
+          <h1>Certificate Record Found</h1>
+          <p class="subtitle">A matching record is available in this website's certificate register.</p>
+          <h2 class="section-title">CERTIFICATE DETAILS</h2>
+          <div class="details">
+            ${row("Record status", c.recordStatus)}
+            ${row("Issued to", c.issuedTo)}
+            ${row("Event name", c.eventName)}
+            ${row("Start date", c.startDate)}
+            ${row("End date", c.endDate)}
+            ${row("Issuance date", c.issuanceDate)}
+            ${row("Certificate ID", c.certificateId)}
+            ${row("Issuer named on certificate", c.issuer)}
+          </div>`;
+        document.getElementById("qrTools").hidden = false;
+      } catch (error) {
+        result.innerHTML = `<div class="error"><h1>Record Not Found</h1>
+          <p>${error.message}</p><p>Please check the certificate ID or contact the site owner.</p></div>`;
+      }
+    }
+
+    document.getElementById("makeQr").addEventListener("click", async () => {
+      const response = await fetch(`/api/qr/${encodeURIComponent(id)}`);
+      const data = await response.json();
+      if (!response.ok) return alert(data.message || "QR generation failed");
+      document.getElementById("qrImage").src = data.dataUrl;
+      document.getElementById("qrUrl").textContent = data.verificationUrl;
+      document.getElementById("downloadQr").href = data.dataUrl;
+      document.getElementById("qrBox").style.display = "block";
+    });
+
+    loadRecord();
+  </script>
+</body>
+</html>

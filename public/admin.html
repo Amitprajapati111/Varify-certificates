@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#176e58" />
+  <title>Admin Portal - Internship Certificate & QR Manager</title>
+  <style>
+    :root {
+      --primary: #176e58;
+      --primary-hover: #125544;
+      --green: #26966f;
+      --green-light: #e6f5ef;
+      --ink: #202a35;
+      --muted: #68727d;
+      --line: #e3e8ec;
+      --bg: #f5f8fa;
+      --card-bg: #ffffff;
+      --danger: #cf3838;
+      --danger-hover: #b32a2a;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header.navbar {
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .brand-wrap { display: flex; align-items: center; gap: 10px; }
+    .brand-logo {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: var(--green-light); color: var(--green);
+      display: grid; place-items: center; font-size: 20px; font-weight: 800;
+    }
+    .brand-title { font-size: 18px; font-weight: 800; color: var(--primary); letter-spacing: .2px; }
+    .badge {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 6px; background: #eef2f6; color: #475569;
+    }
+    .nav-links { display: flex; align-items: center; gap: 14px; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none; font-size: 13.5px; font-weight: 600;
+      transition: color .15s;
+    }
+    .nav-links a:hover { color: var(--primary); }
+    .nav-links .btn-outline {
+      padding: 7px 14px; border: 1px solid var(--line); border-radius: 8px;
+      background: #ffffff; color: var(--ink);
+    }
+    .nav-links .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+    main.container {
+      width: min(1140px, calc(100% - 32px));
+      margin: 36px auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .hero-banner {
+      background: linear-gradient(135deg, #176e58 0%, #258c70 100%);
+      color: #ffffff;
+      border-radius: var(--radius);
+      padding: 26px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      box-shadow: 0 8px 24px rgba(23,110,88,.15);
+    }
+    .hero-banner h1 { font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+    .hero-banner p { color: rgba(255,255,255,.88); font-size: 14px; max-width: 620px; line-height: 1.5; }
+
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .grid-layout { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: 0 4px 18px rgba(0,0,0,.03);
+    }
+    .card-title {
+      font-size: 17px;
+      font-weight: 750;
+      color: var(--ink);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title .subtitle-note {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    /* Form Styles */
+    .form-group { margin-bottom: 16px; }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 550px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 650;
+      color: #38424d;
+      margin-bottom: 6px;
+    }
+    label span.req { color: var(--danger); }
+    input[type="text"], input[type="url"], select, textarea {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--ink);
+      background: #ffffff;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(23,110,88,.12);
+    }
+    .input-addon {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-small {
+      padding: 0 12px;
+      white-space: nowrap;
+      font-size: 12.5px;
+      font-weight: 600;
+      border: 1px solid var(--line);
+      background: #f8fafb;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--ink);
+      transition: all .15s;
+    }
+    .btn-small:hover { background: #eef2f5; border-color: #cbd5e1; }
+
+    .help-hint {
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-top: 5px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+    button.btn-primary {
+      padding: 11px 20px;
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 650;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: background .15s, transform .05s;
+    }
+    button.btn-primary:hover { background: var(--primary-hover); }
+    button.btn-primary:active { transform: scale(0.99); }
+
+    button.btn-secondary {
+      padding: 11px 18px;
+      background: #ffffff;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    button.btn-secondary:hover { background: #f8fafb; border-color: #cbd5e1; }
+
+    /* QR Code Display Card */
+    .qr-card-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .qr-empty-placeholder {
+      padding: 48px 20px;
+      color: var(--muted);
+      border: 2px dashed var(--line);
+      border-radius: 12px;
+      width: 100%;
+      background: #fafbfc;
+    }
+    .qr-preview-box {
+      display: none;
+      width: 100%;
+      flex-direction: column;
+      align-items: center;
+    }
+    .qr-img-wrap {
+      background: #ffffff;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.06);
+      margin-bottom: 18px;
+    }
+    #qrPreviewImage {
+      width: 240px;
+      height: 240px;
+      display: block;
+      border-radius: 6px;
+    }
+    .qr-link-box {
+      width: 100%;
+      background: #f8fafb;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #475569;
+      word-break: break-all;
+      margin-bottom: 16px;
+      user-select: all;
+    }
+    .qr-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+      width: 100%;
+    }
+    .btn-download {
+      background: var(--green);
+      color: white;
+      text-decoration: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: filter .15s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-download:hover { filter: brightness(0.92); }
+
+    .btn-view-record {
+      background: #ffffff;
+      color: var(--primary);
+      text-decoration: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-weight: 650;
+      font-size: 13.5px;
+      border: 1px solid var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all .15s;
+    }
+    .btn-view-record:hover { background: var(--green-light); }
+
+    /* Alert / Notification */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .alert-success { background: #e8f8f0; color: #166c4e; border: 1px solid #c2ebd7; }
+    .alert-error { background: #fde8e8; color: #9c2727; border: 1px solid #f8c3c3; }
+
+    /* Table of Existing Records */
+    .table-container {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      margin-top: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+    th {
+      background: #f8fafb;
+      padding: 12px 16px;
+      font-weight: 700;
+      color: #475569;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+      color: #334155;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafbfc; }
+    .record-id {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 700;
+      color: var(--primary);
+      font-size: 13px;
+    }
+    .record-actions {
+      display: flex;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    .btn-action {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      background: white;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--ink);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-action:hover { background: #f1f5f9; }
+    .btn-action.btn-del { color: var(--danger); border-color: #fed7d7; }
+    .btn-action.btn-del:hover { background: #fff5f5; }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      background: white;
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <div class="brand-wrap">
+      <div class="brand-logo">✓</div>
+      <div>
+        <span class="brand-title">CERTIFICATE RECORD PORTAL</span>
+        <span class="badge" style="margin-left:8px;">Admin</span>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="/verify/INFOSYS-ISB1-2025-AMIT" target="_blank">View Verification Page ↗</a>
+      <a href="/" class="btn-outline">Lookup Record</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="hero-banner">
+      <div>
+        <h1>Internship Details &amp; QR Code Manager</h1>
+        <p>Enter the internship details below to create or update the verification record, generate an official QR code pointing directly to this record, and download the high-resolution QR image.</p>
+      </div>
+    </section>
+
+    <div id="alertBox" class="alert"></div>
+
+    <div class="grid-layout">
+      <!-- FORM CARD -->
+      <section class="card">
+        <div class="card-title">
+          <span>Internship Certificate Details</span>
+          <span class="subtitle-note">* Required fields</span>
+        </div>
+
+        <form id="certForm" onsubmit="handleFormSubmit(event)">
+          <div class="form-group">
+            <label for="certificateId">Certificate ID <span class="req">*</span></label>
+            <div class="input-addon">
+              <input type="text" id="certificateId" placeholder="e.g. INFOSYS-ISB1-2025-AMIT" required />
+              <button type="button" class="btn-small" onclick="generateAutoId()" title="Generate a new unique ID">Auto Generate</button>
+            </div>
+            <div class="help-hint">Unique identifier encoded into the QR code link.</div>
+          </div>
+
+          <div class="form-group">
+            <label for="issuedTo">Issued To (Intern Name) <span class="req">*</span></label>
+            <input type="text" id="issuedTo" placeholder="e.g. Amit Kumar" required />
+          </div>
+
+          <div class="form-group">
+            <label for="eventName">Internship Title / Event Name <span class="req">*</span></label>
+            <textarea id="eventName" rows="2" placeholder="e.g. Internship 6.0 (B1): Development of Civic Issue Reporting & Tracking Application" required></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="startDate">Start Date</label>
+              <input type="text" id="startDate" placeholder="e.g. 06 Aug 2025" />
+            </div>
+            <div class="form-group">
+              <label for="endDate">End Date</label>
+              <input type="text" id="endDate" placeholder="e.g. 10 Oct 2025" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="issuanceDate">Issuance Date</label>
+              <input type="text" id="issuanceDate" placeholder="e.g. 27 Nov 2025" />
+            </div>
+            <div class="form-group">
+              <label for="recordStatus">Record Status</label>
+              <select id="recordStatus">
+                <option value="Record found" selected>Record found</option>
+                <option value="Verified">Verified</option>
+                <option value="Active">Active</option>
+                <option value="Completed">Completed</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="issuer">Issuer Named on Certificate</label>
+            <input type="text" id="issuer" value="Infosys Springboard" placeholder="e.g. Infosys Springboard" />
+          </div>
+
+          <!-- Base URL setting for custom domain -->
+          <div class="form-group" style="background:#f8fafb; border:1px solid var(--line); border-radius:8px; padding:12px 14px;">
+            <label for="baseUrl">QR Link Domain / Base URL</label>
+            <input type="url" id="baseUrl" placeholder="https://your-domain.com" />
+            <div class="help-hint">Leave as default or enter your live public HTTPS domain (e.g. <code>https://my-cert-site.com</code>) so the QR code will open your live site when scanned by phones.</div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary" id="saveBtn">
+              <span>💾 Save &amp; Generate QR</span>
+            </button>
+            <button type="button" class="btn-secondary" onclick="generateQrOnly()">
+              <span>⚡ Generate QR Only</span>
+            </button>
+            <button type="button" class="btn-secondary" onclick="resetForm()">
+              <span>Clear Form</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- QR CODE PREVIEW CARD -->
+      <section class="card">
+        <div class="card-title">
+          <span>QR Code Preview</span>
+          <span class="badge" id="qrStatusBadge">Ready</span>
+        </div>
+
+        <div class="qr-card-content">
+          <div id="qrPlaceholder" class="qr-empty-placeholder">
+            <p style="font-size:32px; margin-bottom:10px;">📱</p>
+            <p style="font-weight:600; font-size:14px; margin-bottom:4px; color:var(--ink);">No QR Code Generated Yet</p>
+            <p style="font-size:12.5px;">Fill in the internship details and click <strong>Save &amp; Generate QR</strong> to view and download the QR code.</p>
+          </div>
+
+          <div id="qrPreviewBox" class="qr-preview-box">
+            <div class="qr-img-wrap">
+              <img id="qrPreviewImage" alt="Generated Certificate QR Code" />
+            </div>
+
+            <div style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px; text-align:left; width:100%;">
+              Scannable Verification URL:
+            </div>
+            <div id="qrLinkText" class="qr-link-box"></div>
+
+            <div class="qr-actions">
+              <a id="downloadQrBtn" class="btn-download" download="certificate-qr.png">
+                <span>⬇ Download QR Code (PNG)</span>
+              </a>
+              <button type="button" class="btn-secondary" onclick="copyVerificationUrl()">
+                <span>📋 Copy Verification Link</span>
+              </button>
+              <a id="openVerifyBtn" href="#" target="_blank" class="btn-view-record">
+                <span>↗ Open Verification Page</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- EXISTING CERTIFICATES LIST -->
+    <section class="card">
+      <div class="card-title">
+        <span>Stored Certificate Records (<span id="recordCount">0</span>)</span>
+        <button type="button" class="btn-small" onclick="loadAllCertificates()">🔄 Refresh List</button>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Certificate ID</th>
+              <th>Issued To</th>
+              <th>Event / Internship</th>
+              <th>Issuer</th>
+              <th>Dates</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="certTableBody">
+            <tr>
+              <td colspan="6" style="text-align:center; padding:24px; color:var(--muted);">Loading records…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Certificate Verification &amp; QR Management Portal &bull; All records stored locally in <code>certificates.json</code>
+  </footer>
+
+  <script>
+    let certificatesCache = {};
+    let currentGeneratedUrl = "";
+
+    // Initialize page
+    document.addEventListener("DOMContentLoaded", () => {
+      // Set default base URL to current window origin
+      const currentOrigin = window.location.origin;
+      const baseUrlInput = document.getElementById("baseUrl");
+      if (baseUrlInput && !baseUrlInput.value) {
+        baseUrlInput.value = currentOrigin;
+      }
+      loadAllCertificates();
+    });
+
+    function showAlert(message, type = "success") {
+      const alertBox = document.getElementById("alertBox");
+      alertBox.textContent = message;
+      alertBox.className = `alert alert-${type}`;
+      alertBox.style.display = "block";
+      alertBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      setTimeout(() => {
+        alertBox.style.display = "none";
+      }, 5000);
+    }
+
+    function generateAutoId() {
+      const name = (document.getElementById("issuedTo").value || "INTERN")
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "")
+        .slice(0, 8);
+      const year = new Date().getFullYear();
+      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const newId = `INFOSYS-${year}-${name || "CERT"}-${rand}`;
+      document.getElementById("certificateId").value = newId;
+    }
+
+    async function loadAllCertificates() {
+      try {
+        const res = await fetch("/api/certificates");
+        const data = await res.json();
+        certificatesCache = data.certificates || {};
+        renderTable(certificatesCache);
+
+        // Pre-fill form if INFOSYS-ISB1-2025-AMIT exists and form is empty
+        const idInput = document.getElementById("certificateId");
+        if (!idInput.value && certificatesCache["INFOSYS-ISB1-2025-AMIT"]) {
+          loadIntoForm("INFOSYS-ISB1-2025-AMIT");
+        }
+      } catch (err) {
+        showAlert("Failed to load certificate records from server.", "error");
+      }
+    }
+
+    function renderTable(certs) {
+      const tbody = document.getElementById("certTableBody");
+      const keys = Object.keys(certs);
+      document.getElementById("recordCount").textContent = keys.length;
+
+      if (keys.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--muted);">No certificate records found. Create one using the form above.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = keys.map(k => {
+        const c = certs[k];
+        const dateRange = (c.startDate || c.endDate) ? `${c.startDate || ""} - ${c.endDate || ""}` : (c.issuanceDate || "—");
+        return `
+          <tr>
+            <td class="record-id">${escapeHtml(c.certificateId)}</td>
+            <td><strong>${escapeHtml(c.issuedTo)}</strong></td>
+            <td style="max-width:320px; line-height:1.4;">${escapeHtml(c.eventName)}</td>
+            <td>${escapeHtml(c.issuer || "—")}</td>
+            <td style="font-size:12.5px; color:var(--muted);">${escapeHtml(dateRange)}</td>
+            <td>
+              <div class="record-actions">
+                <button type="button" class="btn-action" onclick="loadIntoForm('${escapeJs(c.certificateId)}')">✏ Edit</button>
+                <button type="button" class="btn-action" onclick="fetchAndDisplayQr('${escapeJs(c.certificateId)}')">📱 QR</button>
+                <a href="/verify/${encodeURIComponent(c.certificateId)}" target="_blank" class="btn-action">↗ View</a>
+                <button type="button" class="btn-action btn-del" onclick="deleteCertificate('${escapeJs(c.certificateId)}')">🗑</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function loadIntoForm(id) {
+      const c = certificatesCache[id];
+      if (!c) return;
+
+      document.getElementById("certificateId").value = c.certificateId || "";
+      document.getElementById("issuedTo").value = c.issuedTo || "";
+      document.getElementById("eventName").value = c.eventName || "";
+      document.getElementById("startDate").value = c.startDate || "";
+      document.getElementById("endDate").value = c.endDate || "";
+      document.getElementById("issuanceDate").value = c.issuanceDate || "";
+      document.getElementById("recordStatus").value = c.recordStatus || "Record found";
+      document.getElementById("issuer").value = c.issuer || "Infosys Springboard";
+
+      // Also trigger QR fetch for this loaded record
+      fetchAndDisplayQr(c.certificateId);
+      showAlert(`Loaded details for ${c.certificateId} into the form.`);
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const certData = {
+        certificateId: document.getElementById("certificateId").value.trim().toUpperCase(),
+        issuedTo: document.getElementById("issuedTo").value.trim(),
+        eventName: document.getElementById("eventName").value.trim(),
+        startDate: document.getElementById("startDate").value.trim(),
+        endDate: document.getElementById("endDate").value.trim(),
+        issuanceDate: document.getElementById("issuanceDate").value.trim(),
+        recordStatus: document.getElementById("recordStatus").value,
+        issuer: document.getElementById("issuer").value.trim()
+      };
+
+      if (!certData.certificateId || !certData.issuedTo || !certData.eventName) {
+        showAlert("Please fill in all required fields (ID, Name, Event).", "error");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/certificates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(certData)
+        });
+        const result = await res.json();
+        if (!res.ok || !result.success) {
+          throw new Error(result.message || "Failed to save record.");
+        }
+
+        showAlert(`Certificate "${certData.certificateId}" saved successfully!`);
+        await loadAllCertificates();
+        // Generate and show QR
+        await fetchAndDisplayQr(certData.certificateId);
+      } catch (err) {
+        showAlert(err.message, "error");
+      }
+    }
+
+    async function generateQrOnly() {
+      const id = document.getElementById("certificateId").value.trim().toUpperCase();
+      if (!id) {
+        showAlert("Please enter or generate a Certificate ID first.", "error");
+        return;
+      }
+      // If it exists in cache or on server, display it
+      await fetchAndDisplayQr(id);
+    }
+
+    async function fetchAndDisplayQr(id) {
+      const baseUrl = document.getElementById("baseUrl").value.trim();
+      try {
+        let url = `/api/qr/${encodeURIComponent(id)}`;
+        if (baseUrl) {
+          url += `?baseUrl=${encodeURIComponent(baseUrl)}`;
+        }
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message || "Failed to generate QR code.");
+        }
+
+        currentGeneratedUrl = data.verificationUrl;
+
+        // Display QR Code
+        document.getElementById("qrPlaceholder").style.display = "none";
+        document.getElementById("qrPreviewBox").style.display = "flex";
+        document.getElementById("qrPreviewImage").src = data.dataUrl;
+        document.getElementById("qrLinkText").textContent = data.verificationUrl;
+
+        // Setup download button
+        const downloadBtn = document.getElementById("downloadQrBtn");
+        downloadBtn.href = data.dataUrl;
+        downloadBtn.download = `QR_${id}.png`;
+
+        // Setup open verification button
+        const openBtn = document.getElementById("openVerifyBtn");
+        openBtn.href = `/verify/${encodeURIComponent(id)}`;
+
+        document.getElementById("qrStatusBadge").textContent = "Active";
+        document.getElementById("qrStatusBadge").style.background = "#e6f5ef";
+        document.getElementById("qrStatusBadge").style.color = "#176e58";
+      } catch (err) {
+        showAlert(`QR generation notice: ${err.message}. If this is a new ID, click "Save & Generate QR" first.`, "error");
+      }
+    }
+
+    function copyVerificationUrl() {
+      if (!currentGeneratedUrl) return;
+      navigator.clipboard.writeText(currentGeneratedUrl).then(() => {
+        showAlert("Verification link copied to clipboard!");
+      }).catch(() => {
+        showAlert("Could not automatically copy. You can select and copy the link text directly.", "error");
+      });
+    }
+
+    async function deleteCertificate(id) {
+      if (!confirm(`Are you sure you want to delete certificate "${id}"? This cannot be undone.`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/certificates/${encodeURIComponent(id)}`, {
+          method: "DELETE"
+        });
+        const result = await res.json();
+        if (!res.ok || !result.success) {
+          throw new Error(result.message || "Failed to delete.");
+        }
+        showAlert(`Deleted certificate ${id}.`);
+        await loadAllCertificates();
+      } catch (err) {
+        showAlert(err.message, "error");
+      }
+    }
+
+    function resetForm() {
+      document.getElementById("certForm").reset();
+      document.getElementById("issuer").value = "Infosys Springboard";
+      document.getElementById("baseUrl").value = window.location.origin;
+      showAlert("Form cleared.");
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function escapeJs(str) {
+      if (!str) return "";
+      return String(str).replace(/'/g, "\\'");
+    }
+  </script>
+</body>
+</html>
