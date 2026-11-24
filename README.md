@@ -25,7 +25,7 @@ A Node.js & Express web application for managing internship and certificate veri
    ```
 3. Open in your browser:
    - **Admin Portal**: [http://localhost:3000/admin](http://localhost:3000/admin)
-   - **Verification View**: [http://localhost:3000/verify/INFOSYS-ISB1-2025-AMIT](http://localhost:3000/verify/INFOSYS-ISB1-2025-AMIT)
+   - **Verification View**: [http://localhost:3000/verify/INFOSYS-ISB1-2025](http://localhost:3000/verify/INFOSYS-ISB1-2025)
 
 ## Generating & Downloading QR Codes
 1. Go to `http://localhost:3000/admin`.

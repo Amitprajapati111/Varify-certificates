@@ -13,8 +13,8 @@ const BUNDLED_FILE = path.join(__dirname, "certificates.json");
 
 // Default certificate template if file doesn't exist
 const DEFAULT_CERTIFICATES = {
-  "INFOSYS-ISB1-2025-AMIT": {
-    certificateId: "INFOSYS-ISB1-2025-AMIT",
+  "INFOSYS-ISB1-2025": {
+    certificateId: "INFOSYS-ISB1-2025",
     issuedTo: "Amit Kumar",
     eventName: "Internship 6.0 (B1): Development of Civic Issue Reporting & Tracking Application",
     startDate: "06 Aug 2025",
@@ -64,7 +64,8 @@ app.get("/api/certificates", (req, res) => {
 
 // Single certificate lookup
 app.get("/api/certificates/:id", (req, res) => {
-  const certificate = certificates[req.params.id.toUpperCase()];
+  const reqId = req.params.id.toUpperCase();
+  const certificate = certificates[reqId] || (reqId === "INFOSYS-ISB1-2025-AMIT" ? certificates["INFOSYS-ISB1-2025"] : null);
   if (!certificate) {
     return res.status(404).json({ found: false, message: "No certificate record was found for this ID." });
   }
@@ -119,7 +120,8 @@ app.delete("/api/certificates/:id", (req, res) => {
 
 // Generate QR code for a certificate
 app.get("/api/qr/:id", async (req, res) => {
-  const id = req.params.id.toUpperCase();
+  const reqId = req.params.id.toUpperCase();
+  const id = certificates[reqId] ? reqId : (reqId === "INFOSYS-ISB1-2025-AMIT" && certificates["INFOSYS-ISB1-2025"] ? "INFOSYS-ISB1-2025" : reqId);
   if (!certificates[id]) return res.status(404).json({ message: "Unknown certificate ID." });
 
   // Base URL can be provided via query param (e.g. from admin panel), env variable, or inferred from request

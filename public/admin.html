@@ -393,7 +393,7 @@
       </div>
     </div>
     <nav class="nav-links">
-      <a href="/verify/INFOSYS-ISB1-2025-AMIT" target="_blank">View Verification Page ↗</a>
+      <a href="/verify/INFOSYS-ISB1-2025" target="_blank">View Verification Page ↗</a>
       <a href="/" class="btn-outline">Lookup Record</a>
     </nav>
   </header>
@@ -420,7 +420,7 @@
           <div class="form-group">
             <label for="certificateId">Certificate ID <span class="req">*</span></label>
             <div class="input-addon">
-              <input type="text" id="certificateId" placeholder="e.g. INFOSYS-ISB1-2025-AMIT" required />
+              <input type="text" id="certificateId" placeholder="e.g. INFOSYS-ISB1-2025" required />
               <button type="button" class="btn-small" onclick="generateAutoId()" title="Generate a new unique ID">Auto Generate</button>
             </div>
             <div class="help-hint">Unique identifier encoded into the QR code link.</div>
@@ -589,13 +589,9 @@
     }
 
     function generateAutoId() {
-      const name = (document.getElementById("issuedTo").value || "INTERN")
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, "")
-        .slice(0, 8);
       const year = new Date().getFullYear();
-      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const newId = `INFOSYS-${year}-${name || "CERT"}-${rand}`;
+      const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+      const newId = `INFOSYS-ISB-${year}-${rand}`;
       document.getElementById("certificateId").value = newId;
     }
 
@@ -606,9 +602,11 @@
         certificatesCache = data.certificates || {};
         renderTable(certificatesCache);
 
-        // Pre-fill form if INFOSYS-ISB1-2025-AMIT exists and form is empty
+        // Pre-fill form if default certificate exists and form is empty
         const idInput = document.getElementById("certificateId");
-        if (!idInput.value && certificatesCache["INFOSYS-ISB1-2025-AMIT"]) {
+        if (!idInput.value && certificatesCache["INFOSYS-ISB1-2025"]) {
+          loadIntoForm("INFOSYS-ISB1-2025");
+        } else if (!idInput.value && certificatesCache["INFOSYS-ISB1-2025-AMIT"]) {
           loadIntoForm("INFOSYS-ISB1-2025-AMIT");
         }
       } catch (err) {
