@@ -27,18 +27,8 @@
     .key,.value { padding:15px 17px; line-height:1.45; }
     .key { background:#f8fafb; font-weight:650; font-size:14px; }
     .value { color:#505b65; overflow-wrap:anywhere; }
-    .disclaimer { margin:22px 0 0; padding:13px 15px; border-radius:10px; background:#fff8e8;
-      color:#725b27; font-size:12px; line-height:1.55; }
     .error { text-align:center; padding:20px 5px; }
     .error h1 { color:#a13b3b; }
-    .admin { margin-top:22px; text-align:center; }
-    button { border:0; border-radius:9px; padding:12px 18px; background:#246fcb; color:white;
-      font-weight:650; cursor:pointer; }
-    button:hover { filter:brightness(.95); }
-    #qrBox { display:none; margin-top:22px; padding-top:20px; border-top:1px solid var(--line); }
-    #qrImage { display:block; width:220px; max-width:100%; margin:14px auto; }
-    #qrUrl { color:#52616c; font-size:12px; overflow-wrap:anywhere; }
-    footer { text-align:center; color:#8a949d; font-size:12px; padding:0 16px 28px; }
     @media(max-width:520px) {
       main { margin:25px auto; }
       .panel { padding:24px 17px; }
@@ -51,29 +41,15 @@
 </head>
 <body>
   <header class="top">
-    <div style="max-width: 720px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; text-align: left; flex-wrap: wrap; gap: 10px;">
-      <div>
-        <div class="brand">CERTIFICATE RECORD PORTAL</div>
-        <div class="subbrand">Independent certificate record lookup</div>
-      </div>
-      <a href="/admin" style="font-size: 13px; font-weight: 650; text-decoration: none; color: #176e58; background: #e6f5ef; padding: 8px 14px; border-radius: 8px; border: 1px solid #cce9de;">Admin Portal ⚙</a>
-    </div>
+    <div class="brand">CERTIFICATE RECORD PORTAL</div>
+    <div class="subbrand">Independent certificate record lookup</div>
   </header>
 
   <main>
     <section class="panel" id="result">
       <div style="text-align:center;color:#68727d">Loading certificate record…</div>
     </section>
-    <section class="admin" id="qrTools" hidden>
-      <button id="makeQr">Generate QR code for this record</button>
-      <div id="qrBox">
-        <img id="qrImage" alt="QR code linking to this certificate record" />
-        <div id="qrUrl"></div>
-        <p><a id="downloadQr" download="certificate-qr.png">Download QR code</a></p>
-      </div>
-    </section>
   </main>
-  <footer>Personal record page &bull; <a href="/admin" style="color: inherit; text-decoration: underline;">Admin &amp; QR Generator</a></footer>
 
   <script>
     const result = document.getElementById("result");
@@ -111,22 +87,11 @@
             ${row("Certificate ID", c.certificateId)}
             ${row("Issuer named on certificate", c.issuer)}
           </div>`;
-        document.getElementById("qrTools").hidden = false;
       } catch (error) {
         result.innerHTML = `<div class="error"><h1>Record Not Found</h1>
           <p>${error.message}</p><p>Please check the certificate ID or contact the site owner.</p></div>`;
       }
     }
-
-    document.getElementById("makeQr").addEventListener("click", async () => {
-      const response = await fetch(`/api/qr/${encodeURIComponent(id)}`);
-      const data = await response.json();
-      if (!response.ok) return alert(data.message || "QR generation failed");
-      document.getElementById("qrImage").src = data.dataUrl;
-      document.getElementById("qrUrl").textContent = data.verificationUrl;
-      document.getElementById("downloadQr").href = data.dataUrl;
-      document.getElementById("qrBox").style.display = "block";
-    });
 
     loadRecord();
   </script>
