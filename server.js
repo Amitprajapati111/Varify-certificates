@@ -11,36 +11,46 @@ const isVercel = Boolean(process.env.VERCEL);
 const DATA_FILE = isVercel ? path.join("/tmp", "certificates.json") : path.join(__dirname, "certificates.json");
 const BUNDLED_FILE = path.join(__dirname, "certificates.json");
 
-// Default certificate template if file doesn't exist
+// Default hardcoded certificate records
 const DEFAULT_CERTIFICATES = {
   "INFOSYS-ISB1-2025": {
     certificateId: "INFOSYS-ISB1-2025",
     issuedTo: "Amit Kumar",
     eventName: "Internship 6.0 (B1): Development of Civic Issue Reporting & Tracking Application",
-    startDate: "06 Aug 2025",
-    endDate: "10 Oct 2025",
-    issuanceDate: "27 Nov 2025",
+    startDate: "July 6, 2026",
+    endDate: "September 10, 2026",
+    issuanceDate: "03 Oct 2026",
+    issuer: "Infosys Springboard",
+    recordStatus: "Record found"
+  },
+  "INFOSYS-ISB-2026-ADITYA": {
+    certificateId: "INFOSYS-ISB-2026-ADITYA",
+    issuedTo: "Aditya Krishna Yadav",
+    eventName: "Internship 7.0 (B2): Code Sync Real Time Code Editor",
+    startDate: "06 Jul 2026",
+    endDate: "10 Sep 2026",
+    issuanceDate: "03 Oct 2026",
     issuer: "Infosys Springboard",
     recordStatus: "Record found"
   }
 };
 
 function loadCertificates() {
+  let loaded = {};
   try {
     if (fs.existsSync(DATA_FILE)) {
       const content = fs.readFileSync(DATA_FILE, "utf-8");
-      return JSON.parse(content);
+      loaded = JSON.parse(content);
     } else if (isVercel && fs.existsSync(BUNDLED_FILE)) {
       const content = fs.readFileSync(BUNDLED_FILE, "utf-8");
-      const parsed = JSON.parse(content);
-      saveCertificates(parsed);
-      return parsed;
+      loaded = JSON.parse(content);
     }
   } catch (err) {
     console.error("Error reading certificates, falling back to defaults:", err);
   }
-  saveCertificates(DEFAULT_CERTIFICATES);
-  return { ...DEFAULT_CERTIFICATES };
+  const merged = { ...loaded, ...DEFAULT_CERTIFICATES };
+  saveCertificates(merged);
+  return merged;
 }
 
 function saveCertificates(data) {

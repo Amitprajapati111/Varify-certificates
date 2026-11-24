@@ -566,9 +566,32 @@
   </footer>
 
   <script>
-    const STORAGE_KEY = "certificate_records_v1";
+    const STORAGE_KEY = "certificate_records_v2";
     let certificatesCache = {};
     let currentGeneratedUrl = "";
+
+    const HARDCODED_DEFAULT_CERTS = {
+      "INFOSYS-ISB1-2025": {
+        certificateId: "INFOSYS-ISB1-2025",
+        issuedTo: "Amit Kumar",
+        eventName: "Internship 6.0 (B1): Development of Civic Issue Reporting & Tracking Application",
+        startDate: "July 6, 2026",
+        endDate: "September 10, 2026",
+        issuanceDate: "03 Oct 2026",
+        issuer: "Infosys Springboard",
+        recordStatus: "Record found"
+      },
+      "INFOSYS-ISB-2026-ADITYA": {
+        certificateId: "INFOSYS-ISB-2026-ADITYA",
+        issuedTo: "Aditya Krishna Yadav",
+        eventName: "Internship 7.0 (B2): Code Sync Real Time Code Editor",
+        startDate: "06 Jul 2026",
+        endDate: "10 Sep 2026",
+        issuanceDate: "03 Oct 2026",
+        issuer: "Infosys Springboard",
+        recordStatus: "Record found"
+      }
+    };
 
     function getLocalCertificates() {
       try {
@@ -617,9 +640,9 @@
     }
 
     async function loadAllCertificates() {
-      // 1. Immediately read from localStorage so records never vanish on refresh!
+      // 1. Immediately read from localStorage, merged with hardcoded defaults
       const localRecords = getLocalCertificates();
-      certificatesCache = { ...localRecords };
+      certificatesCache = { ...HARDCODED_DEFAULT_CERTS, ...localRecords, ...HARDCODED_DEFAULT_CERTS };
       renderTable(certificatesCache);
 
       // 2. Fetch from server and merge
@@ -629,7 +652,7 @@
         const serverCerts = data.certificates || {};
 
         // Merge: keep local records and server records together
-        certificatesCache = { ...serverCerts, ...certificatesCache };
+        certificatesCache = { ...HARDCODED_DEFAULT_CERTS, ...serverCerts, ...certificatesCache };
         saveLocalCertificates(certificatesCache);
         renderTable(certificatesCache);
 
