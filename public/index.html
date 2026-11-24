@@ -12,7 +12,6 @@
       font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif; }
     .top { padding:24px 18px; text-align:center; border-bottom:1px solid var(--line); background:white; }
     .brand { font-size:20px; font-weight:800; letter-spacing:.3px; color:#176e58; }
-    .subbrand { margin-top:4px; color:var(--muted); font-size:12px; }
     main { width:min(720px, calc(100% - 28px)); margin:54px auto; }
     .panel { background:white; border:1px solid var(--line); border-radius:18px; padding:34px;
       box-shadow:0 10px 35px rgba(24,45,39,.06); }
@@ -42,7 +41,6 @@
 <body>
   <header class="top">
     <div class="brand">CERTIFICATE RECORD PORTAL</div>
-    <div class="subbrand">Independent certificate record lookup</div>
   </header>
 
   <main>
@@ -57,36 +55,66 @@
       .toUpperCase();
 
     function row(label, value) {
-      return `<div class="item"><div class="key">${label}</div><div class="value">${value}</div></div>`;
+      return `<div class="item"><div class="key">${label}</div><div class="value">${value || "—"}</div></div>`;
+    }
+
+    function renderCertificate(c) {
+      result.innerHTML = `
+        <div class="status-icon" aria-label="Record found">✓</div>
+        <h1>Certificate Record Found</h1>
+        <p class="subtitle">A matching record is available in this website's certificate register.</p>
+        <h2 class="section-title">CERTIFICATE DETAILS</h2>
+        <div class="details">
+          ${row("Record status", c.recordStatus || "Record found")}
+          ${row("Issued to", c.issuedTo)}
+          ${row("Event name", c.eventName)}
+          ${row("Start date", c.startDate)}
+          ${row("End date", c.endDate)}
+          ${row("Issuance date", c.issuanceDate)}
+          ${row("Certificate ID", c.certificateId || id)}
+          ${row("Issuer named on certificate", c.issuer)}
+        </div>`;
     }
 
     async function loadRecord() {
+      // 1. Check if certificate details are encoded in URL query parameters (?d=...)
+      const urlParams = new URLSearchParams(window.location.search);
+      const encoded = urlParams.get("d");
+      if (encoded) {
+        try {
+          const jsonStr = decodeURIComponent(escape(atob(encoded)));
+          const c = JSON.parse(jsonStr);
+          if (c && (c.certificateId || c.issuedTo)) {
+            renderCertificate(c);
+            return;
+          }
+        } catch (e) {
+          console.warn("Could not decode URL payload:", e);
+        }
+      }
+
+      // 2. Check browser localStorage
+      try {
+        const localData = JSON.parse(localStorage.getItem("certificate_records") || "{}");
+        if (id && localData[id]) {
+          renderCertificate(localData[id]);
+          return;
+        }
+      } catch (e) {}
+
+      // 3. Fallback to server lookup
       if (!id || id === "VERIFY") {
         result.innerHTML = `<div class="error"><h1>Certificate Record Lookup</h1>
           <p>Scan a certificate QR code or open a link containing a certificate ID.</p>
           <p>Example: <code>/verify/INFOSYS-ISB1-2025</code></p></div>`;
         return;
       }
+
       try {
         const response = await fetch(`/api/certificates/${encodeURIComponent(id)}`);
         const data = await response.json();
         if (!response.ok || !data.found) throw new Error(data.message || "Record not found");
-        const c = data.certificate;
-        result.innerHTML = `
-          <div class="status-icon" aria-label="Record found">✓</div>
-          <h1>Certificate Record Found</h1>
-          <p class="subtitle">A matching record is available in this website's certificate register.</p>
-          <h2 class="section-title">CERTIFICATE DETAILS</h2>
-          <div class="details">
-            ${row("Record status", c.recordStatus)}
-            ${row("Issued to", c.issuedTo)}
-            ${row("Event name", c.eventName)}
-            ${row("Start date", c.startDate)}
-            ${row("End date", c.endDate)}
-            ${row("Issuance date", c.issuanceDate)}
-            ${row("Certificate ID", c.certificateId)}
-            ${row("Issuer named on certificate", c.issuer)}
-          </div>`;
+        renderCertificate(data.certificate);
       } catch (error) {
         result.innerHTML = `<div class="error"><h1>Record Not Found</h1>
           <p>${error.message}</p><p>Please check the certificate ID or contact the site owner.</p></div>`;

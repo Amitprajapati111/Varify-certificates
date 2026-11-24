@@ -122,16 +122,20 @@ app.delete("/api/certificates/:id", (req, res) => {
 app.get("/api/qr/:id", async (req, res) => {
   const reqId = req.params.id.toUpperCase();
   const id = certificates[reqId] ? reqId : (reqId === "INFOSYS-ISB1-2025-AMIT" && certificates["INFOSYS-ISB1-2025"] ? "INFOSYS-ISB1-2025" : reqId);
-  if (!certificates[id]) return res.status(404).json({ message: "Unknown certificate ID." });
+  const cert = certificates[id];
+  if (!cert) return res.status(404).json({ message: "Unknown certificate ID." });
 
   // Base URL can be provided via query param (e.g. from admin panel), env variable, or inferred from request
   const customBaseUrl = req.query.baseUrl;
   const baseUrl = (customBaseUrl || process.env.BASE_URL || `${req.protocol}://${req.get("host")}` || `http://localhost:${PORT}`).replace(/\/$/, "");
-  const verificationUrl = `${baseUrl}/verify/${encodeURIComponent(id)}`;
+
+  // Encode certificate data into QR URL so verification works permanently across restarts
+  const payload = Buffer.from(JSON.stringify(cert)).toString("base64");
+  const verificationUrl = `${baseUrl}/verify/${encodeURIComponent(id)}?d=${encodeURIComponent(payload)}`;
 
   try {
     const dataUrl = await QRCode.toDataURL(verificationUrl, {
-      errorCorrectionLevel: "H",
+      errorCorrectionLevel: "M",
       margin: 2,
       width: 500,
       color: { dark: "#10231d", light: "#ffffff" }

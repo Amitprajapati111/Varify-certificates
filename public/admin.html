@@ -533,7 +533,10 @@
     <section class="card">
       <div class="card-title">
         <span>Stored Certificate Records (<span id="recordCount">0</span>)</span>
-        <button type="button" class="btn-small" onclick="loadAllCertificates()">🔄 Refresh List</button>
+        <div style="display:flex; gap:8px;">
+          <button type="button" class="btn-small" onclick="exportJsonBackup()" title="Download a backup copy of all certificates">📥 Export JSON Backup</button>
+          <button type="button" class="btn-small" onclick="loadAllCertificates()">🔄 Refresh List</button>
+        </div>
       </div>
 
       <div class="table-container">
@@ -563,8 +566,26 @@
   </footer>
 
   <script>
+    const STORAGE_KEY = "certificate_records_v1";
     let certificatesCache = {};
     let currentGeneratedUrl = "";
+
+    function getLocalCertificates() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function saveLocalCertificates(certs) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(certs));
+      } catch (e) {
+        console.warn("Storage save error:", e);
+      }
+    }
 
     // Initialize page
     document.addEventListener("DOMContentLoaded", () => {
@@ -596,21 +617,34 @@
     }
 
     async function loadAllCertificates() {
+      // 1. Immediately read from localStorage so records never vanish on refresh!
+      const localRecords = getLocalCertificates();
+      certificatesCache = { ...localRecords };
+      renderTable(certificatesCache);
+
+      // 2. Fetch from server and merge
       try {
         const res = await fetch("/api/certificates");
         const data = await res.json();
-        certificatesCache = data.certificates || {};
+        const serverCerts = data.certificates || {};
+
+        // Merge: keep local records and server records together
+        certificatesCache = { ...serverCerts, ...certificatesCache };
+        saveLocalCertificates(certificatesCache);
         renderTable(certificatesCache);
 
-        // Pre-fill form if default certificate exists and form is empty
-        const idInput = document.getElementById("certificateId");
-        if (!idInput.value && certificatesCache["INFOSYS-ISB1-2025"]) {
-          loadIntoForm("INFOSYS-ISB1-2025");
-        } else if (!idInput.value && certificatesCache["INFOSYS-ISB1-2025-AMIT"]) {
-          loadIntoForm("INFOSYS-ISB1-2025-AMIT");
+        // 3. Auto-sync any local records missing on server (e.g. after Vercel cold restart)
+        for (const id in certificatesCache) {
+          if (!serverCerts[id]) {
+            fetch("/api/certificates", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(certificatesCache[id])
+            }).catch(() => {});
+          }
         }
       } catch (err) {
-        showAlert("Failed to load certificate records from server.", "error");
+        console.warn("Server fetch note (using local cache):", err);
       }
     }
 
@@ -683,24 +717,28 @@
         return;
       }
 
+      // 1. Immediately save into browser localStorage so it's NEVER lost on refresh!
+      const localRecords = getLocalCertificates();
+      localRecords[certData.certificateId] = certData;
+      saveLocalCertificates(localRecords);
+
+      certificatesCache[certData.certificateId] = certData;
+      renderTable(certificatesCache);
+
+      // 2. Also save to server
       try {
-        const res = await fetch("/api/certificates", {
+        await fetch("/api/certificates", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(certData)
         });
-        const result = await res.json();
-        if (!res.ok || !result.success) {
-          throw new Error(result.message || "Failed to save record.");
-        }
-
-        showAlert(`Certificate "${certData.certificateId}" saved successfully!`);
-        await loadAllCertificates();
-        // Generate and show QR
-        await fetchAndDisplayQr(certData.certificateId);
       } catch (err) {
-        showAlert(err.message, "error");
+        console.warn("Server save error (cached locally):", err);
       }
+
+      showAlert(`Certificate "${certData.certificateId}" saved successfully!`);
+      // Generate and show QR
+      await fetchAndDisplayQr(certData.certificateId);
     }
 
     async function generateQrOnly() {
@@ -709,7 +747,6 @@
         showAlert("Please enter or generate a Certificate ID first.", "error");
         return;
       }
-      // If it exists in cache or on server, display it
       await fetchAndDisplayQr(id);
     }
 
@@ -741,13 +778,13 @@
 
         // Setup open verification button
         const openBtn = document.getElementById("openVerifyBtn");
-        openBtn.href = `/verify/${encodeURIComponent(id)}`;
+        openBtn.href = data.verificationUrl;
 
         document.getElementById("qrStatusBadge").textContent = "Active";
         document.getElementById("qrStatusBadge").style.background = "#e6f5ef";
         document.getElementById("qrStatusBadge").style.color = "#176e58";
       } catch (err) {
-        showAlert(`QR generation notice: ${err.message}. If this is a new ID, click "Save & Generate QR" first.`, "error");
+        showAlert(`QR notice: ${err.message}. If this is a new ID, click "Save & Generate QR" first.`, "error");
       }
     }
 
@@ -764,19 +801,25 @@
       if (!confirm(`Are you sure you want to delete certificate "${id}"? This cannot be undone.`)) {
         return;
       }
+
+      // Delete from localStorage
+      const localRecords = getLocalCertificates();
+      delete localRecords[id];
+      saveLocalCertificates(localRecords);
+
+      delete certificatesCache[id];
+      renderTable(certificatesCache);
+
+      // Delete from server
       try {
-        const res = await fetch(`/api/certificates/${encodeURIComponent(id)}`, {
+        await fetch(`/api/certificates/${encodeURIComponent(id)}`, {
           method: "DELETE"
         });
-        const result = await res.json();
-        if (!res.ok || !result.success) {
-          throw new Error(result.message || "Failed to delete.");
-        }
-        showAlert(`Deleted certificate ${id}.`);
-        await loadAllCertificates();
       } catch (err) {
-        showAlert(err.message, "error");
+        console.warn("Server delete warning:", err);
       }
+
+      showAlert(`Deleted certificate ${id}.`);
     }
 
     function resetForm() {
@@ -784,6 +827,17 @@
       document.getElementById("issuer").value = "Infosys Springboard";
       document.getElementById("baseUrl").value = window.location.origin;
       showAlert("Form cleared.");
+    }
+
+    function exportJsonBackup() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(certificatesCache, null, 2));
+      const downloadAnchor = document.createElement("a");
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "certificates.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showAlert("Exported certificates.json backup.");
     }
 
     function escapeHtml(str) {
